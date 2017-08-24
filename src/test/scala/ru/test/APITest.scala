@@ -2,8 +2,10 @@ package ru.test
 
 import java.util
 
+import org.json4s.DefaultFormats
+
 import scala.collection.JavaConverters._
-import org.json4s.JsonAST.{JObject, JString}
+import org.json4s.JsonAST.{JArray, JObject, JString}
 import org.scalatest.junit.JUnitSuite
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -11,7 +13,7 @@ import org.junit.runners.Parameterized.Parameters
 import org.junit.{Before, Test}
 
 @RunWith(classOf[Parameterized])
-class APITest(groupName: String) extends JUnitSuite  {
+class APITest(groupName: String) extends JUnitSuite {
 
     final val BaseUrl: String = "https://www.tinkoff.ru/api/v1/providers?groups="
     val testConnection = new TestConnection()
@@ -63,12 +65,19 @@ class APITest(groupName: String) extends JUnitSuite  {
     }
 
     /**
-        Verifies that for each id equal to "lastName" the "name" parameter contains "Фамилия" substring
+        Verifies that for each id equal to "phone" the "name" parameter contains "[Н|номер телефона]" substring
         Priority: 5
       */
     @Test
-    def parameterContainsSubstring() {
-
+    def sectionsWithIdPhoneContainsSubstring() {
+        val sectionsWithId = JSONUtil.sectionsWithId(testConnection.responseContent, "phone")
+        if (sectionsWithId.isEmpty) {
+            fail(s"No sections with id 'phone' for group name $groupName")
+        }
+        sectionsWithId.map(x => x \ "name").foreach { name =>
+            implicit val formats = DefaultFormats
+            assert(name.extract[String].toLowerCase.contains("номер телефона"))
+        }
     }
 }
 
